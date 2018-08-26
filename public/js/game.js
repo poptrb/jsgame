@@ -1,12 +1,14 @@
 var config = {
-  type: Phaser.AUTO,
+  type: Phaser.WEBGL,
   parent: 'phaser-example',
   width: 800,
   height: 600,
-  physics: {
+  physics:
+  {
     default: 'arcade',
-    arcade: {
-      debug: false,
+    arcade:
+    {
+      debug: true,
       gravity: { y: 0 }
     }
   },
@@ -15,15 +17,15 @@ var config = {
     create: create,
     update: update,
     extend: {
-                    player: null,
-                    healthpoints: null,
-                    reticle: null,
-                    moveKeys: null,
-                    playerBullets: null,
-                    enemyBullets: null,
-                    time: 0,
-                }
-  } 
+      player: null,
+      healthpoints: null,
+      reticle: null,
+      moveKeys: null,
+      playerBullets: null,
+      enemyBullets: null,
+      time: 0,
+    }
+  }
 };
 
 
@@ -33,48 +35,118 @@ function preload() {
   this.load.image('ship', 'assets/tankbody.png');
   this.load.image('otherPlayer', 'assets/enemyBlack5.png');
   this.load.image('star', 'assets/star_gold.png');
-  this.load.image('background', 'assets/bg2.jpg')
-  this.load.image('reticle', 'assets/crosshair.png')
-  this.load.image('bullet', 'assets/player_bullet.png')
-  this.load.image('turela', 'assets/tankturret.png')
+  //this.load.image('star', 'assets/bb.png');
+  this.load.image('background', 'assets/bg2.jpg');
+  this.load.image('reticle', 'assets/crosshair.png');
+  this.load.image('bullet', 'assets/player_bullet.png');
+  this.load.image('turela', 'assets/tankturret.png');
+  this.load.image('spark', 'assets/particle.png');
+
+  //date despre harta in format JSON si seturile de tiles
+  this.load.image("tiles", "assets/tilemaps/tuxmon-sample-32px.png");
+  this.load.tilemapTiledJSON("map", "/assets/tilemaps/gamemap.json");
 }
 
 function create() {
+
   var self = this;
-  this.socket = io();
+  this.socket = io();//.connect('http://localhost:8081');
+
+  //Date despre incarcarea hartii 
+
+  const map = this.make.tilemap({key: "map"});
+
+  //Fiecare layer separat din harta trebuie incarcat intr-o variabila pentru afisare de catre Phaser
+  // Denumirea fiecareia este preluata din cum le-am numit in editorul de harti Tiled
+  const tileset = map.addTilesetImage("tuxmon-sample-32px", "tiles");
+  const ground = map.createStaticLayer("Ground", tileset, 0, 0);
+  const aboveground = map.createStaticLayer("AboveGround", tileset, 0, 0);
+  const fence = map.createStaticLayer("Fence", tileset, 0, 0);
+  const trees = map.createStaticLayer("Trees", tileset, 0, 0);
+  
+  aboveground.setCollisionByProperty({ collides: true });
+  fence.setCollisionByProperty({ collides: true });
+  trees.setCollisionByProperty({ collides: true });
+  
+  this.collisionLayers = [trees,fence,aboveground];
+  //Pt debug sa vedem coliziunile din proprietatile hartii
+
+    /* const debugGraphics = this.add.graphics().setAlpha(0.75);
+      trees.renderDebug(debugGraphics, {
+        tileColor: null, // Culoare blocurilor fara coliziune
+        collidingTileColor: new Phaser.Display.Color(243, 134, 48, 255), // Culoarea celor cu coliziune
+        faceColor: new Phaser.Display.Color(40, 39, 37, 255) // Culoarea muchiilor blocurilor cu coliziune
+      }); */
   this.otherPlayers = this.physics.add.group();
-  this.physics.world.setBounds(0,0, 1024 *2, 1024*2);
+  this.otherTurrets = this.physics.add.group();
+  
+  //this.otherPlayers.enableBody = true;
+  /*this.otherPlayers.physicsBodyType = Phaser.Physics.ARCADE;*/
+
+  //var particles = this.add.particles('spark');
+  this.emitter0 = self.add.particles('spark').createEmitter({
+    x: 0,
+    y: 0,
+    speed: { min: -800, max: 800 },
+    angle: { min: 0, max: 360 },
+    scale: { start: 0.5, end: 0 },
+    blendMode: 'ADD',
+    active: true,
+    lifespan: 30,
+    gravityY: 800
+  });
+
+  this.physics.world.setBounds(0, 0, 1024 * 2, 1024 * 2);
   this.cameras.main.setBounds(0, 0, 1024 * 2, 1024 * 2);
   this.velocity = 0;
-    for (y = 0; y < 2; y++)
-    {
-        for (x = 0; x < 2; x++)
-        {
-            this.add.image(1024 * x, 1024 * y, 'background').setOrigin(0).setAlpha(0.75);
-        }
-    }
-  
+  this.once = true;
+
+  //runChildUpdate forteaza ca la fiecare ciclu de joc sa fie apelata functia update a obiectului
   playerBullets = this.physics.add.group({ classType: Bullet, runChildUpdate: true });
   enemyBullets = this.physics.add.group({ classType: Bullet, runChildUpdate: true });
 
-  this.socket.on('currentPlayers', function (players) {
+  this.socket.on('connect', function () {
+    // Apeleaza functia din server 'addUser' si trimite un parametru
+    var room =  (Math.floor(Math.random() * 2) == 0) ? 'r1' : 'r2'
+    self.socket.emit('adduser', prompt("Cum te cheama?"), room);
+    
+  });
+
+  this.socket.on('currentPlayers', function (players, room) {
     Object.keys(players).forEach(function (id) {
-      if (players[id].playerId === self.socket.id) {
+      ///Bug: de fiecare data cand se conecteaza un nou jucator, duplica tancul
+      ///jucatorului SELF, incerc ceva cu players[id].created dar nu cred ca merge
+      if (players[id].playerId === self.socket.id && players[id].created === 0) {
         addPlayer(self, players[id]);
-      } else {
+        console.log('Called currentPlayers: Added SELF player from room', players[id].room 
+        , 'in room', room);
+      } else 
+         if (room === players[id].room) {
+         console.log('Called currentPlayers: Added OTHER player from room', players[id].room 
+        , 'in room', room)
         addOtherPlayers(self, players[id]);
       }
     });
   });
 
-  this.socket.on('newPlayer', function (playerInfo) {
-    addOtherPlayers(self, playerInfo);
+  this.socket.on('newPlayer', function (playerInfo, room) {
+    //Adauga un singur jucator pentru ceilalti deja existenti
+    //this.room = playerInfo.room;
+    console.log('Called newPlayer');
+    if (room === playerInfo.room)
+      addOtherPlayers(self, playerInfo);
+
   });
 
   this.socket.on('disconnect', function (playerId) {
     self.otherPlayers.getChildren().forEach(function (otherPlayer) {
       if (playerId === otherPlayer.playerId) {
         otherPlayer.destroy();
+      }
+    });
+    self.otherTurrets.getChildren().forEach(function (otherTurret) {
+      if (playerId === otherTurret.playerId) {
+        otherTurret.destroy();
       }
     });
   });
@@ -86,21 +158,29 @@ function create() {
         otherPlayer.setPosition(playerInfo.x, playerInfo.y);
       }
     });
-  });
-
-  this.socket.on('shotFired', function (playerInfo) {
-    self.otherPlayers.getChildren().forEach(function (otherPlayer) {
-      if (playerInfo.playerId === otherPlayer.playerId) {
-
+    self.otherTurrets.getChildren().forEach(function (otherTurret) {
+      if (playerInfo.playerId === otherTurret.playerId) {
+        otherTurret.setRotation(playerInfo.t);
+        otherTurret.setPosition(playerInfo.x, playerInfo.y);
       }
     });
-  })
+  });
+
+  this.socket.on('shotFired', function (bulletData) {
+    var enemy_bullet = enemyBullets.get().setActive(true).setVisible(true);
+    if (enemy_bullet) {
+      enemy_bullet.fire(bulletData.ship_pos, bulletData.target);
+    }
+  });
+
   this.cameras.main.setDeadzone(400, 200);
   this.cursors = this.input.keyboard.createCursorKeys();
-  
-  this.blueScoreText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#0000FF' });
-  this.redScoreText = this.add.text(584, 16, '', { fontSize: '32px', fill: '#FF0000' });
-  
+
+  this.blueScoreText = this.add.text(16, 16, '',
+    { fontSize: '32px', fill: '#0000FF' });
+  this.redScoreText = this.add.text(584, 16, '',
+    { fontSize: '32px', fill: '#FF0000' });
+
   this.socket.on('scoreUpdate', function (scores) {
     self.blueScoreText.setText('Blue: ' + scores.blue);
     self.redScoreText.setText('Red: ' + scores.red);
@@ -118,51 +198,51 @@ function create() {
   reticle.setOrigin(0.5, 0.5).setDisplaySize(45, 45).setCollideWorldBounds(true);
 
   game.canvas.addEventListener('mousedown', function () {
-        game.input.mouse.requestPointerLock();
-    });
+    game.input.mouse.requestPointerLock();
+  });
 
-    // Exit pointer lock when Q or escape (by default) is pressed.
-    this.input.keyboard.on('keydown_Q', function (event) {
-        if (game.input.mouse.locked)
-            game.input.mouse.releasePointerLock();
-    }, 0, this);
+  // Elibereaza mouse-ul cand este apasat Q sau Escape
+  this.input.keyboard.on('keydown_Q', function (event) {
+    if (game.input.mouse.locked)
+      game.input.mouse.releasePointerLock();
+  }, 0, this);
 
-    // Move reticle upon locked pointer move
-    this.input.on('pointermove', function (pointer) {
-        if (this.input.mouse.locked)
+  // Misca tinta cand mouse-ul este activ in fereastra
+  this.input.on('pointermove', function (pointer) {
+    if (this.input.mouse.locked) {
+      reticle.x += pointer.movementX;
+      reticle.y += pointer.movementY;
+    }
+  }, this);
+
+  this.input.on('pointerdown', function (pointer, time) {
+    var bullet = playerBullets.get().setActive(true).setVisible(true);
+    if (bullet) {
+      bullet.fire(this.ship, reticle);
+      this.physics.add.collider(this.otherPlayers, bullet, function () {
+        bullet.explode();
+        //this.emitter0.setPosition(bulllet.getxy().x, bullet.getxy().y);
+        //console.log(bullet.final().x);
+        //this.emitter0.explode();
+      });
+      this.socket.emit('bulletFired',
         {
-            reticle.x += pointer.movementX;
-            reticle.y += pointer.movementY;
-        }
-    }, this);
-
-    this.input.on('pointerdown', function (pointer, time) {
-        /*0if (player.active === false)
-            return;
-*/
-        // Get bullet from bullets group
-        var bullet = playerBullets.get().setActive(true).setVisible(true);
-
-        if (bullet)
-        {
-            bullet.fire(this.ship, reticle);
-            this.socket.emit('bulletMovement', 
-            { x: bullet.x, y: bullet.y});
-            //this.physics.add.collider(enemy, bullet, enemyHitCallback);
-        }
-    }, this);
-    /*velocity = 15;*/
-    
+          ship_pos: this.ship,
+          target: reticle
+        });
+    }
+  }, this);
+  
+  this.physics.add.collider(this.otherPlayers, trees);
 }
-
 
 
 function addPlayer(self, playerInfo) {
 
-  self.ship = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship').setOrigin(0.5, 0.5)
-  .setDisplaySize(150, 200).setCollideWorldBounds(true);
-  self.turret = self.physics.add.image(playerInfo.x, playerInfo.y, 'turela').setOrigin(0.5, 0.47)
-  .setDisplaySize(150, 200).setCollideWorldBounds(true);
+  self.ship = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship').setSize(500,500,true).setOrigin(0.5, 0.5)
+    .setDisplaySize(90, 120).setCollideWorldBounds(true);
+  self.turret = self.physics.add.image(playerInfo.x, playerInfo.y, 'turela').setSize(500,500,true).setOrigin(0.5, 0.47)
+    .setDisplaySize(90, 120).setCollideWorldBounds(true);
   if (playerInfo.team === 'blue') {
     self.ship.setTint(0xf2fcff);
     self.turret.setTint(0xf2fcff);
@@ -170,6 +250,7 @@ function addPlayer(self, playerInfo) {
     self.ship.setTint(0xe5a690);
     self.turret.setTint(0xe5a690);
   }
+
   self.ship.setDrag(450);
   self.ship.setAngularDrag(1000);
   self.ship.setMaxVelocity(250);
@@ -177,12 +258,14 @@ function addPlayer(self, playerInfo) {
   self.turret.setDrag(450);
   self.turret.setAngularDrag(1000);
   self.turret.setMaxVelocity(250);
-  //
 }
 
 function addOtherPlayers(self, playerInfo) {
-  const otherPlayer = self.add.sprite(playerInfo.x, playerInfo.y, 'ship')
-  .setOrigin(0.5, 0.5).setDisplaySize(150, 200);
+  const otherPlayer = self.physics.add.sprite(playerInfo.x, playerInfo.y, 'ship')
+    .setOrigin(0.5, 0.5).setDisplaySize(90, 120);
+  const otherTurret = self.physics.add.sprite(playerInfo.x, playerInfo.y, 'turela')
+    .setOrigin(0.5, 0.5).setDisplaySize(90, 120);
+
   if (playerInfo.team === 'blue') {
     otherPlayer.setTint(0xf2fcff);
   } else {
@@ -190,12 +273,21 @@ function addOtherPlayers(self, playerInfo) {
   }
   otherPlayer.playerId = playerInfo.playerId;
   self.otherPlayers.add(otherPlayer);
+  otherTurret.playerId = playerInfo.playerId;
+  self.otherTurrets.add(otherTurret);
 }
 
 function update() {
   if (this.ship) {
-    
-    this.cameras.main.zoom = 0.5;
+    self = this;
+    if (this.once){
+      this.collisionLayers.forEach(function (entry) {
+        self.physics.add.collider(self.ship, entry);
+        self.physics.add.collider(self.turret, entry);
+      });
+    this.once = false;
+    }
+    this.cameras.main.zoom = 0.65;
     this.cameras.main.startFollow(this.ship, true, 0.05, 0.05);
     if (this.cursors.left.isDown) {
       this.ship.setAngularVelocity(-50);
@@ -203,50 +295,57 @@ function update() {
     } else if (this.cursors.right.isDown) {
       this.ship.setAngularVelocity(50);
       this.turret.setAngularVelocity(50);
-      
+
     } else {
       this.ship.setAngularVelocity(0);
     }
-  
+
     if (this.cursors.up.isDown) {
-      this.ship.body.setAcceleration(-250);
-      this.turret.body.setAcceleration(-250);
+      this.ship.body.setAcceleration(250);
+      this.turret.body.setAcceleration(250);
       this.physics.velocityFromRotation(this.ship.rotation + 1.5, 100, this.ship.body.acceleration);
       this.physics.velocityFromRotation(this.ship.rotation + 1.5, 100, this.turret.body.acceleration);
-    }else if(this.cursors.down.isDown) {
+    } else if (this.cursors.down.isDown) {
       this.ship.body.setAcceleration(-250);
       this.turret.body.setAcceleration(-250);
-      this.physics.velocityFromRotation(this.ship.rotation + 1.5, 100, this.ship.body.acceleration);
-      this.physics.velocityFromRotation(this.ship.rotation + 1.5, 100, this.turret.body.acceleration);
+      this.physics.velocityFromRotation(this.ship.rotation + 1.5, -100, this.ship.body.acceleration);
+      this.physics.velocityFromRotation(this.ship.rotation + 1.5, -100, this.turret.body.acceleration);
     } else {
       this.ship.setAcceleration(0);
       this.turret.setAcceleration(0);
     }
-    
-            
-    //this.physics.world.wrap(this.ship, 5);
 
-    // emit player movement
+
+
+    // Emite date despre miscarea jucatorului
     var x = this.ship.x;
     var y = this.ship.y;
     var r = this.ship.rotation;
-    rotIRTret = Math.atan2(reticle.x-this.ship.x , reticle.y-this.ship.y); 
+    rotIRTret = Math.atan2(reticle.x - this.ship.x, reticle.y - this.ship.y);
     // unghiul dintre turela si tinta de pe ecran
+    this.turret.rotation = (rotIRTret < 0 ? 2 * Math.PI - rotIRTret : -rotIRTret);
 
-    this.turret.rotation = (rotIRTret < 0 ? 2 * Math.PI - rotIRTret: -rotIRTret);
+    var rt = this.turret.rotation;
 
-    if (this.ship.oldPosition && (x !== this.ship.oldPosition.x || y !== this.ship.oldPosition.y || r !== this.ship.oldPosition.rotation)) {
-      this.socket.emit('playerMovement', { x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation });
+    //Daca pozitia jucatorului sau a turelei acesuita s-a schimbat => emite catre server noua pozitie
+    if (this.ship.oldPosition && (x !== this.ship.oldPosition.x || y !== this.ship.oldPosition.y
+      || r !== this.ship.oldPosition.rotation || rt != this.ship.oldPosition.tur_rotation)) {
+      this.socket.emit('playerMovement',
+        {
+          x: this.ship.x,
+          y: this.ship.y,
+          rotation: this.ship.rotation,
+          t: this.turret.rotation
+        });
     }
-    // save old position data
-    this.ship.oldPosition = {
-      x: this.ship.x,
-      y: this.ship.y,
-      rotation: this.ship.rotation,
-      velocity: this.ship.velocity
-    };
-
-    
+    // Salveaza datele despre vechea pozitie
+    this.ship.oldPosition =
+      {
+        x: this.ship.x,
+        y: this.ship.y,
+        rotation: this.ship.rotation,
+        tur_rotation: this.turret.rotation
+      };
 
   }
 }

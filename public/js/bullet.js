@@ -14,6 +14,10 @@ var Bullet = new Phaser.Class({
         this.xSpeed = 0;
         this.ySpeed = 0;
         this.setSize(12, 12, true);
+        this.land = 0;
+        this.lungime = 0;
+        this.yFinal = 0;
+        
     },
 
     // Trage un proiectil dinspre nava catre tinta de pe ecran
@@ -22,6 +26,9 @@ var Bullet = new Phaser.Class({
         this.setPosition(shooter.x, shooter.y); // Pozitia intiala
         this.direction = Math.atan( (target.x-this.x) / (target.y-this.y));
 
+        //Pozitia finala unde va ateriza glontul
+        lungime = Math.pow(shooter.x - target.x,2) + Math.pow(shooter.y-target.y,2);
+        console.log(Math.sqrt(lungime));
         // Calculeaza viteza pe verticala si orizontala in drumul spre tinta
         if (target.y >= this.y)
         {
@@ -39,16 +46,33 @@ var Bullet = new Phaser.Class({
     },
 
     // Updates the position of the bullet each cycle
+    getxy: function () 
+    {   
+        return {x: this.x, y: this.y};
+    },
+
     update: function (time, delta)
     {
         this.x += this.xSpeed * delta;
         this.y += this.ySpeed * delta;
         this.born += delta;
-        if (this.born > 300)
+        
+        if (this.born > Math.sqrt(lungime))
         {
-            this.setActive(false);
-            this.setVisible(false);
+            this.landingzone = this.getxy();
+            this.explode();
         }
+    },
+
+    final : function () {
+        return this.landigzone;
+    },
+
+    explode: function () {
+        this.landingzone = this.getxy();
+        this.setActive(false);
+        this.setVisible(false);
     }
 
+    
 });

@@ -17,6 +17,8 @@ var Bullet = new Phaser.Class({
         this.land = 0;
         this.lungime = 0;
         this.yFinal = 0;
+        this.finalx = 0;
+        this.finaly=0;
         
     },
 
@@ -25,7 +27,8 @@ var Bullet = new Phaser.Class({
     {
         this.setPosition(shooter.x, shooter.y); // Pozitia intiala
         this.direction = Math.atan( (target.x-this.x) / (target.y-this.y));
-
+        this.finalx = shooter.x;
+        this.finaly = shooter.y;
         //Pozitia finala unde va ateriza glontul
         lungime = Math.pow(shooter.x - target.x,2) + Math.pow(shooter.y-target.y,2);
         console.log(Math.sqrt(lungime));
@@ -72,6 +75,7 @@ var Bullet = new Phaser.Class({
         this.landingzone = this.getxy();
         this.setActive(false);
         this.setVisible(false);
+        this.setPosition(this.finalx, this.finaly)
     }
 
     

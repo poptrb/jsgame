@@ -41,10 +41,12 @@ function preload() {
   this.load.image('bullet', 'assets/player_bullet.png');
   this.load.image('turela', 'assets/tankturret.png');
   this.load.image('spark', 'assets/particle.png');
-
+  this.load.image('crater', 'assets/crater.png')
   //date despre harta in format JSON si seturile de tiles
   this.load.image("tiles", "assets/tilemaps/tuxmon-sample-32px.png");
   this.load.tilemapTiledJSON("map", "/assets/tilemaps/gamemap.json");
+  
+  this.load.atlas('explosion', 'assets/explosion0.png', 'assets/explosion0.json')
 }
 
 function create() {
@@ -83,18 +85,24 @@ function create() {
   //this.otherPlayers.enableBody = true;
   /*this.otherPlayers.physicsBodyType = Phaser.Physics.ARCADE;*/
 
-  //var particles = this.add.particles('spark');
-  this.emitter0 = self.add.particles('spark').createEmitter({
-    x: 0,
-    y: 0,
-    speed: { min: -800, max: 800 },
-    angle: { min: 0, max: 360 },
-    scale: { start: 0.5, end: 0 },
-    blendMode: 'ADD',
-    active: true,
-    lifespan: 30,
-    gravityY: 800
-  });
+  //this.anims.on('add', addAnimation.bind(this));
+  /*this.anims.create({ key: 'exp', frames: this.anims.generateFrameNames
+                      ('explosion', { prefix: 'exp_', end: 50, zeroPad: 2 }), repeat: -1 });
+  this.add.sprite(400, 500, 'explosion').play('exp');
+*/
+  var textureFrames = this.textures.get('explosion').getFrameNames();
+
+    var animFrames = [];
+
+    textureFrames.forEach(function (frameName) {
+
+        animFrames.push({ key: 'explosion', frame: frameName });
+
+    });
+
+    this.anims.create({ key: 'exp', frames: animFrames});
+
+    
 
   this.physics.world.setBounds(0, 0, 1024 * 2, 1024 * 2);
   this.cameras.main.setBounds(0, 0, 1024 * 2, 1024 * 2);
@@ -219,23 +227,41 @@ function create() {
     var bullet = playerBullets.get().setActive(true).setVisible(true);
     if (bullet) {
       bullet.fire(this.ship, reticle);
-      this.physics.add.collider(this.otherPlayers, bullet, function () {
-        bullet.explode();
-        //this.emitter0.setPosition(bulllet.getxy().x, bullet.getxy().y);
-        //console.log(bullet.final().x);
-        //this.emitter0.explode();
-      });
+      this.physics.add.collider(this.otherPlayers, bullet, enemyHitCallback);
+        
       this.socket.emit('bulletFired',
         {
           ship_pos: this.ship,
           target: reticle
         });
-    }
+      }
   }, this);
   
   this.physics.add.collider(this.otherPlayers, trees);
 }
 
+
+
+function enemyHitCallback(bulletHit, enemyHit)
+{
+    //BulletHit corespunde coliziunii glontului iar enemyHit coliziunii cu celalt jucator
+    // Reduce health of enemy
+    if (bulletHit.active === true)//) && enemyHit.active === true)
+    {
+        //enemyHit.health = enemyHit.health - 1;
+        console.log("hit");
+        self.add.sprite(bulletHit.x, bulletHit.y, 'explosion').setScale(1.5,1.5).play('exp');
+        
+        // Kill enemy if health <= 0
+        /*if (enemyHit.health <= 0)
+        {
+           enemyHit.setActive(false).setVisible(false);
+        }
+*/
+        // Destroy bullet
+        bulletHit.setActive(false).setVisible(false);
+    }
+}
 
 function addPlayer(self, playerInfo) {
 

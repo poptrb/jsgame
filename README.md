@@ -15,7 +15,8 @@ Am pornit la drum cu ideea de a crea un joc care poate fi jucat in orice browser
 - Un sistem de baze de date, posibil MySQLLite sau MongoDB pentru integrarea unor functii de autentificare a utilizatorilor.
 - HTML si CSS pentru aspectul paginilor web statice.
 ## Imagini 
-
+![Un tanc pe campul de lupta](screens/Selection_003.png)
+![Doua tancuri in doua taburi de browser diferite](screens/Selection_002.png)
 ## Set-up
 Pe Linux, trebuie ca inainte sa avem node si npm (managerul de pachete instalat): 
 ```bash

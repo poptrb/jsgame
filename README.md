@@ -3,7 +3,7 @@
 Pentru proiectul meu de licenta am ales sa creez un joc in browser folosind biblioteci si tehnici moderne pentru JavaScript. 
 
 ## Caracteristicile jocului
-Am pornit la drum cu ideea de a crea un joc care poate fi jucat in orice browser, fara a fi nevoie ca utilizatorul sa instaleze software aditional pentru rularea acestuia. Mecanica principala a jocului consta intr-o lupta cu tancuri, 1v1, in timp real. Fiecare utilizator controleaza un tanc si trebuie sa il distruga pe cel al celuilalt utilizator pentru a inscrie puncte si a castiga meciul. Jocul se desfasoara intr-o perspectiva ortogonala 2D (in alte cuvinte campul de lupta si tancurile sunt vazute de deasupra sus), iar acestea se controleaza din tastele directionale iar turela lor se controleaza din mouse. Jocul se desfasoara in timp real deoarece fiecare utilizator vede ce face oponentul sau pe ecran. Comunicarea intre jucatori si coordonarea acestora se face cu ajutorul unui server. De asemenea, acest joc are si capacitatea de a gazduri meciuri intre mai multi utilizatori concomitent, cu posibilitatea izolarii actiunilor dintre un anumit meci de celelalte, dar toate gazduite pe acelasi server.
+Am pornit la drum cu ideea de a crea un joc care poate fi jucat in orice browser, fara a fi nevoie ca utilizatorul sa instaleze software aditional pentru rularea acestuia. Mecanica principala a jocului consta intr-o lupta cu tancuri, 1 vs. 1, in timp real. Fiecare utilizator controleaza un tanc si trebuie sa il distruga pe cel al celuilalt utilizator pentru a inscrie puncte si a castiga meciul. Jocul se desfasoara intr-o perspectiva ortogonala 2D (in alte cuvinte campul de lupta si tancurile sunt vazute de sus, ca intr-un joc de strategie), iar tancurile se controleaza din tastele directionale. Turela lor se controleaza din mouse. Jocul se desfasoara in timp real deoarece fiecare utilizator vede ce face oponentul sau pe ecran. Comunicarea intre jucatori si coordonarea acestora se face cu ajutorul unui server. De asemenea, acest joc are si capacitatea de a gazduri meciuri intre mai multi utilizatori concomitent, cu posibilitatea izolarii actiunilor dintre un anumit meci de celelalte, dar toate gazduite pe acelasi server.
 
 ## Tehnologii folosite
 
@@ -15,7 +15,9 @@ Am pornit la drum cu ideea de a crea un joc care poate fi jucat in orice browser
 - Un sistem de baze de date, posibil MySQLLite sau MongoDB pentru integrarea unor functii de autentificare a utilizatorilor.
 - HTML si CSS pentru aspectul paginilor web statice.
 ## Imagini 
+Prima imagine ofera o viziune de ansamblu asupra jocului. Se poate vedea un tanc, cu turela acestuia, nivelul in care sunt cateva casute si drumuri si tinta care semnifica in ce directie va trage turela.
 ![Un tanc pe campul de lupta](screens/Selection_003.png)
+A doua imagine arata cum in doua ferestre de browser diferite avem doua instante separate ale jocului. Fiecare jucator controleaza un tanc, iar actiunile fiecaruia sunt redate in timp real si pe ecranul celuilalt.
 ![Doua tancuri in doua taburi de browser diferite](screens/Selection_002.png)
 ## Set-up
 Pe Linux, trebuie ca inainte sa avem node si npm (managerul de pachete instalat): 
@@ -35,4 +37,3 @@ intr-un browser intram in localhost:8081
 ```
 
 Miscati tancul cu sagetile de pe tastatura. Din mouse se controleaza turela tancului. Click pentru a lansa o bomba. Daca mai deschideti o fereastra de browser la aceeasi adresa veti fi asignat unei camere din doar cele doua existente momentan in acest stadiu al jocului si veti vedea in timp real ceilalti jucatori (cati vedeti depinde in care din cele doua meciuri posibile ati fost plasati, pentru a reincerca dati refresh paginii). Proiectul are cateva bug-uri momentan (De exemplu se afiseaza un tanc in plus de fiecare data cand apare un nou jucator).
-> Written with [StackEdit](https://stackedit.io/).

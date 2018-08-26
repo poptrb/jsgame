@@ -17,6 +17,7 @@ Am pornit la drum cu ideea de a crea un joc care poate fi jucat in orice browser
 ## Imagini 
 Prima imagine ofera o viziune de ansamblu asupra jocului. Se poate vedea un tanc, cu turela acestuia, nivelul in care sunt cateva casute si drumuri si tinta care semnifica in ce directie va trage turela.
 ![Un tanc pe campul de lupta](screens/Selection_003.png)
+
 A doua imagine arata cum in doua ferestre de browser diferite avem doua instante separate ale jocului. Fiecare jucator controleaza un tanc, iar actiunile fiecaruia sunt redate in timp real si pe ecranul celuilalt.
 ![Doua tancuri in doua taburi de browser diferite](screens/Selection_002.png)
 ## Set-up

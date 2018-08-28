@@ -12,7 +12,9 @@ var star = {
 };
 var scores = {
   blue: 0,
-  red: 0
+  red: 0,
+  hp_1st: 100,
+  hp_2nd: 100
 };
 
 app.use(express.static(__dirname + '/public'));
@@ -35,18 +37,22 @@ io.sockets.on('connection', function (socket) {
       playerId: socket.id,
       team: (Math.floor(Math.random() * 2) == 0) ? 'red' : 'blue',
       room: roomchoice, //(Math.floor(Math.random() * 2) == 0) ? 'r1' : 'r2',
-      created: 0
+      created: 0,
+      username: socket.username
     };
     console.log(players[socket.id].room);
     socket.room = players[socket.id].room; //players[socket.id].team === 'red' ? 'r1' : 'r2';
-    console.log('a user connected: ', username, 'in room', socket.room);
+    console.log('a user connected: ', username, ' ' ,socket.id, 'in room', socket.room);
     usernames[username] = username;
     
     
     //socket.to(socket.room).emit('currentPlayers', players, socket.room);
 
-    // Trimite obiectul players noului jucator send the players object to the new player
-    io.sockets.in(socket.room).emit('currentPlayers', players, socket.room);
+    // Trimite obiectul players noului jucator
+    io.sockets.in(socket.room).emit('currentPlayers', players, socket.room, socket.id);
+    //socket.broadcast.to(socket.id).emit('currentPlayers', players, socket.room);
+    players[socket.id].created === 1;
+    //io.sockets.in(socket.room).to(socket).emit('currentPlayers', players, socket.room);
     players[socket.id].created = 1;
     // Trimite obiectul steluta 
     io.sockets.in(socket.room).emit('starLocation', star);
@@ -87,10 +93,17 @@ io.sockets.on('connection', function (socket) {
 
   });*/
   // Codul pentru 
+  socket.on('HPUpdate', (HPdata)=> {
+    scores.hp_1st = HPdata.player;
+    scores.hp_2nd = HPdata.enemy;
+    console.log(scores);
+    io.sockets.in(socket.room).emit('newHP', scores);
+  });
   socket.on('starCollected', function () {
     if (players[socket.id].team === 'red') 
     {
-      scores.red += 10;
+      scores.red -= 10;
+      
     }
     else 
     {

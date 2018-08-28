@@ -8,7 +8,7 @@ var config = {
     default: 'arcade',
     arcade:
     {
-      debug: false,
+      debug: true,
       gravity: { y: 0 }
     }
   },
@@ -87,15 +87,15 @@ function create() {
 
   var textureFrames = this.textures.get('explosion').getFrameNames();
 
-  var animFrames = [];
+    var animFrames = [];
 
-  textureFrames.forEach(function (frameName) {
+    textureFrames.forEach(function (frameName) {
 
-    animFrames.push({ key: 'explosion', frame: frameName });
+        animFrames.push({ key: 'explosion', frame: frameName });
 
-  });
+    });
 
-  this.anims.create({ key: 'exp', frames: animFrames });
+    this.anims.create({ key: 'exp', frames: animFrames});
 
     
 
@@ -118,47 +118,36 @@ function create() {
   //  Ar trebui sa avem un singur jucator oponent pe fiecare camera de joc, 
   //  dar o multitudine de jucatori pe server.
 
-  this.socket.on('currentPlayers', function (players, room, target) {
-    if (self.socket.id === target) {
+  this.socket.on('currentPlayers', function (players, room) {
     Object.keys(players).forEach(function (id) {
       ///Bug: de fiecare data cand se conecteaza un nou jucator, duplica tancul
       ///jucatorului SELF, incerc ceva cu players[id].created dar nu cred ca merge
-
       if (players[id].playerId === self.socket.id && players[id].created === 0) {
         addPlayer(self, players[id]);
-        console.log('M-am adaugat pe mine insumi', players[id].username);
-        self.collisionLayers.forEach(function (entry) {
-          self.physics.add.collider(self.ship, entry);
-          self.physics.add.collider(self.turret, entry);
-        });
         self.player = players[id];
-        
         console.log('You: ',self.player.playerId);
-        if (self.otherPlayers.getChildren().length > 0) {
-          self.gameOpponent = self.otherPlayers.getChildren()[0];
-          console.log('The opponent: ', self.gameOpponent.playerId);
-        }
-
+        //console.log(this.player);
+        //console.log('Called currentPlayers: Added SELF player from room', players[id].room , 'in room', room);
       } else 
          if (room === players[id].room) {
+         //console.log('Called currentPlayers: Added OTHER player from room', players[id].room , 'in room', room)
         addOtherPlayers(self, players[id]);
-        console.log('Am adaugat inamic (currentPlayers): ', players[id].username);
+        // Vrem id-ul oponentului doar din aceasta camera
       }
     });
-    }
   });
 
   this.socket.on('newPlayer', function (playerInfo, room) {
-    //Adauga un singur jucator pentru celalalt deja existent.
-    if (room === playerInfo.room ){
+    //Adauga un singur jucator pentru ceilalti deja existenti
+    //this.room = playerInfo.room;
+    console.log('Called newPlayer');
+    if (room === playerInfo.room)
       addOtherPlayers(self, playerInfo);
       // Vrem id-ul oponentului doar din aceasta camera
-      self.gameOpponent = self.otherPlayers.getChildren()[1];
-      console.log('Am adaugat inamic (newPlayer): ', playerInfo.username);
+      self.gameOpponent = self.otherPlayers.getChildren()[1];//.playerId;
+        console.log (self.gameOpponent.body.scene);
         console.log('You: ',self.player.playerId);
         console.log('The opponent: ', self.gameOpponent.playerId);
-       
-    }
 
   });
 
@@ -324,10 +313,10 @@ function update() {
     self = this;
     if (this.once){
       this.HPtext.setVisible(true);
-      /*this.collisionLayers.forEach(function (entry) {
+      this.collisionLayers.forEach(function (entry) {
         self.physics.add.collider(self.ship, entry);
         self.physics.add.collider(self.turret, entry);
-      });*/
+      });
     this.once = false;
     }
     this.HPtext.setText(this.HP);

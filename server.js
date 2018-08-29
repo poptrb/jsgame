@@ -143,6 +143,6 @@ io.sockets.on('connection', function (socket) {
 });
 
 
-server.listen(8081, function () {
+server.listen(process.env.PORT || 8081, function () {
   console.log(`Listening on ${server.address().port}`);
 });

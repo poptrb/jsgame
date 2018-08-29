@@ -47,6 +47,7 @@ function preload() {
   this.load.tilemapTiledJSON("map", "/assets/tilemaps/gamemap.json");
   
   this.load.atlas('explosion', 'assets/explosion0.png', 'assets/explosion0.json')
+  this.load.atlas('explosionDestroy', 'assets/explosionDestroy.png', 'assets/explosionDestroy.json')
 }
 
 function create() {
@@ -57,7 +58,7 @@ function create() {
   //Date despre incarcarea hartii 
 
   const map = this.make.tilemap({key: "map"});
-
+  
   //Fiecare layer separat din harta trebuie incarcat intr-o variabila pentru afisare de catre Phaser
   // Denumirea fiecareia este preluata din cum le-am numit in editorul de harti Tiled
   const tileset = map.addTilesetImage("tuxmon-sample-32px", "tiles");
@@ -71,68 +72,67 @@ function create() {
   trees.setCollisionByProperty({ collides: true });
   
   this.collisionLayers = [trees,fence,aboveground];
-  //Pt debug sa vedem coliziunile din proprietatile hartii
 
-    /* const debugGraphics = this.add.graphics().setAlpha(0.75);
-      trees.renderDebug(debugGraphics, {
-        tileColor: null, // Culoare blocurilor fara coliziune
-        collidingTileColor: new Phaser.Display.Color(243, 134, 48, 255), // Culoarea celor cu coliziune
-        faceColor: new Phaser.Display.Color(40, 39, 37, 255) // Culoarea muchiilor blocurilor cu coliziune
-      }); */
+  //Pt debug sa vedem coliziunile din proprietatile hartii
+  /*const debugGraphics = this.add.graphics().setAlpha(0.75);
+    trees.renderDebug(debugGraphics, {
+      tileColor: null, // Culoare blocurilor fara coliziune
+      collidingTileColor: new Phaser.Display.Color(243, 134, 48, 255), // Culoarea celor cu coliziune
+      faceColor: new Phaser.Display.Color(40, 39, 37, 255) // Culoarea muchiilor blocurilor cu coliziune
+    }); */
+
   this.otherPlayers = this.physics.add.group();
   this.otherTurrets = this.physics.add.group();
   
-  //this.otherPlayers.enableBody = true;
-  /*this.otherPlayers.physicsBodyType = Phaser.Physics.ARCADE;*/
-
   var textureFrames = this.textures.get('explosion').getFrameNames();
-
   var animFrames = [];
-
   textureFrames.forEach(function (frameName) {
-
     animFrames.push({ key: 'explosion', frame: frameName });
-
   });
-
   this.anims.create({ key: 'exp', frames: animFrames });
 
-    
+  var textureFrames2 = this.textures.get('explosionDestroy').getFrameNames();
+  var animFrames2 = [];
+  textureFrames2.forEach(function (frameName) {
+    animFrames2.push({ key: 'explosionDestroy', frame: frameName });
+  });
+  this.anims.create({ key: 'expD', frames: animFrames2 });
 
   this.physics.world.setBounds(0, 0, 1024 * 2, 1024 * 2);
   this.cameras.main.setBounds(0, 0, 1024 * 2, 1024 * 2);
   this.velocity = 0;
   this.once = true;
-
+  this.gameover = false;
   //runChildUpdate forteaza ca la fiecare ciclu de joc sa fie apelata functia update a obiectului
   playerBullets = this.physics.add.group({ classType: Bullet, runChildUpdate: true });
   enemyBullets = this.physics.add.group({ classType: Bullet, runChildUpdate: true });
   
   this.socket.on('connect', function () {
     // Apeleaza functia din server 'addUser' si trimite un parametru
-    var room =  (Math.floor(Math.random() * 2) == 0) ? 'r1' : 'r2'
-    self.socket.emit('adduser', prompt("Cum te cheama?"), room);
+    // Camera nu e ok sa se stabileasca aici. Trebuie trimisa de la server.
+    //var room =  (Math.floor(Math.random() * 2) == 0) ? 'r1' : 'r2'
+    self.socket.emit('adduser', prompt("Cum te cheama?"));
     
   });
   //  Rezolvare potentiala bug 
   //  Ar trebui sa avem un singur jucator oponent pe fiecare camera de joc, 
   //  dar o multitudine de jucatori pe server.
 
+  this.socket.on('receiveRoom', function (roomchoice){
+    //self.room = roomchoice;
+  });
   this.socket.on('currentPlayers', function (players, room, target) {
     if (self.socket.id === target) {
     Object.keys(players).forEach(function (id) {
-      ///Bug: de fiecare data cand se conecteaza un nou jucator, duplica tancul
-      ///jucatorului SELF, incerc ceva cu players[id].created dar nu cred ca merge
-
       if (players[id].playerId === self.socket.id && players[id].created === 0) {
         addPlayer(self, players[id]);
-        console.log('M-am adaugat pe mine insumi', players[id].username);
+        //console.log('M-am adaugat pe mine insumi', players[id].username);
         self.collisionLayers.forEach(function (entry) {
           self.physics.add.collider(self.ship, entry);
           self.physics.add.collider(self.turret, entry);
         });
         self.player = players[id];
-        
+        self.room = room;
         console.log('You: ',self.player.playerId);
         if (self.otherPlayers.getChildren().length > 0) {
           self.gameOpponent = self.otherPlayers.getChildren()[0];
@@ -141,8 +141,8 @@ function create() {
 
       } else 
          if (room === players[id].room) {
+           console.log('equal');
         addOtherPlayers(self, players[id]);
-        console.log('Am adaugat inamic (currentPlayers): ', players[id].username);
       }
     });
     }
@@ -153,13 +153,10 @@ function create() {
     if (room === playerInfo.room ){
       addOtherPlayers(self, playerInfo);
       // Vrem id-ul oponentului doar din aceasta camera
-      self.gameOpponent = self.otherPlayers.getChildren()[1];
-      console.log('Am adaugat inamic (newPlayer): ', playerInfo.username);
-        console.log('You: ',self.player.playerId);
-        console.log('The opponent: ', self.gameOpponent.playerId);
-       
+      self.gameOpponent = self.otherPlayers.getChildren()[0];
+      console.log('You: ',self.player.playerId);
+      console.log('The opponent: ', self.gameOpponent.playerId);
     }
-
   });
 
   this.socket.on('disconnect', function (playerId) {
@@ -172,6 +169,10 @@ function create() {
       if (playerId === otherTurret.playerId) {
         otherTurret.destroy();
       }
+    alert('Celalt jucator s-a deconectat.');
+    self.winner = self.socket.id;
+    self.socket.emit('gameover', self.room, self.winner);
+    self.scene.destroy();
     });
   });
 
@@ -200,8 +201,14 @@ function create() {
   this.cameras.main.setDeadzone(400, 200);
   this.cursors = this.input.keyboard.createCursorKeys();
 
+  // Date despre hit-points ale tancurilor
   this.enemyHP = this.HP = 100;
-  this.HPtext = this.add.text(0, 0, this.HP, { fontSize: '26px', fill: '#0000FF' }).setVisible(false);
+  this.HPtext = this.add.text(0, 0, this.HP,
+   { fontSize: '26px', fill: '#0000FF' }).setVisible(false);
+  this.enemyHPtext = this.add.text(0, 0, this.enemyHP,
+   { fontSize: '26px', fill: '#0000FF' }).setVisible(false);
+
+
   this.blueScoreText = this.add.text(0, 0, '',
     { fontSize: '32px', fill: '#0000FF' });
   this.redScoreText = this.add.text(584, 16, '',
@@ -212,13 +219,57 @@ function create() {
     self.redScoreText.setText('Red: ' + scores.red);
   });
 
-  this.socket.on('newHP', function (scores) {
-    self.HP = scores.hp_1st;
-    self.HPtext.setText(self.HP);
-    console.log(self.HP);
-    self.enemyHP = scores.hp_2nd;
+  this.socket.on('newHP', function (scores, playerID) {
+    if (playerID === self.socket.id) {
+      //Suntem pe ramura in care noi insine suntem jucatorul
+      self.HP = scores.hp_1st;
+      self.HPtext.setText(self.HP);
+      self.enemyHP = scores.hp_2nd;
+      self.enemyHPtext.setText(self.enemyHP);
+    }
+      else 
+    {
+      self.enemyHP = scores.hp_1st;
+      self.enemyHPtext.setText(self.enemyHP);
+      self.HP = scores.hp_2nd;
+      self.HPtext.setText(self.HP);
+    }
+
+    if (self.HP < 0 && !(self.gameover)){
+      self.socket.emit('destroyed', self.socket.id);
+      self.gameover = true;
+      self.winner = self.socket.id;
+    }
+    else if ((self.enemyHP < 0) &&  !(self.gameover)){
+      self.socket.emit('destroyed', self.gameOpponent.playerId); 
+      self.gameover = true;
+      self.winner = self.gameOpponent.playerId;
+      self.add.image(self.gameOpponent.x, self.gameOpponent.y, 'crater');
+      const explosionSprite = self.add.
+        sprite(self.gameOpponent.x  , self.gameOpponent.y - 60, 'explosionDestroy').
+          setScale(0.7, 0.7).play('expD');
+      self.gameOpponent.destroy();
+      self.otherTurrets.getChildren()[0].destroy();
+      removeExplosion(explosionSprite, 750);
+    }
+    if (self.gameover)
+      self.socket.emit('gameover', self.room, self.winner)
   });
 
+  this.socket.on('destroySelf', function (id) {
+    if (self.socket.id === id) {
+      self.add.image(self.ship.x, self.ship.y, 'crater');
+      const explosionSprite = self.add
+        .sprite(self.ship.x, self.ship.y - 60, 'explosionDestroy')
+        .setScale(0.7, 0.7)
+        .play('expD');
+      self.ship.destroy();
+      self.turret.destroy();
+      removeExplosion(explosionSprite, 750);
+    }
+  });
+
+  
   this.socket.on('starLocation', function (starLocation) {
     if (self.star) self.star.destroy();
     self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
@@ -259,11 +310,21 @@ function create() {
         if (bullet.active === true)//) && enemyHit.active === true)
         {
           console.log("hit");
-          self.add.sprite(bullet.x, bullet.y, 'explosion').setScale(1.5, 1.5).play('exp');
-          this.socket.emit('HPUpdate', 
-          {enemy:this.enemyHP - 25, player:this.HP});
+          const explosionSprite = self.add
+            .sprite(bullet.x, bullet.y, 'explosion')
+            .setScale(1.5, 1.5)
+            .play('exp');
+          this.socket.emit('HPUpdate',
+          {
+            ehp:this.enemyHP - 25,
+            php:this.HP,
+            player: self.socket.id,
+            enemy: self.gameOpponent.playerId
+          });
+          
           // Destroy bullet
           bullet.setActive(false).setVisible(false);
+          removeExplosion(explosionSprite, 3000);
         }
       });
       }
@@ -278,13 +339,33 @@ function create() {
   
 }
 
+function destroyBomb(explosion, t) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve(explosion.destroy());
+    }, t);
+  });
+} 
+
+async function removeExplosion(explosion, t){
+  await destroyBomb(explosion, t);
+}
+
 function addPlayer(self, playerInfo) {
 
-  self.ship = self.physics.add.image(playerInfo.x, playerInfo.y, 'ship').setSize(500,500,true).setOrigin(0.5, 0.5)
-    .setDisplaySize(90, 120).setCollideWorldBounds(true);
-  self.turret = self.physics.add.image(playerInfo.x, playerInfo.y, 'turela').setSize(500,500,true).setOrigin(0.5, 0.47)
-    .setDisplaySize(90, 120).setCollideWorldBounds(true);
-  if (playerInfo.team === 'blue') {
+  self.ship = self.physics.add
+  .image(playerInfo.x, playerInfo.y, 'ship')
+  .setSize(500,500,true)
+  .setOrigin(0.5, 0.5)
+  .setDisplaySize(90, 120)
+  .setCollideWorldBounds(true);
+  self.turret = self.physics.add
+  .image(playerInfo.x, playerInfo.y, 'turela')
+  .setSize(500,500,true)
+  .setOrigin(0.5, 0.47)
+  .setDisplaySize(90, 120)
+  .setCollideWorldBounds(true);
+    if (playerInfo.team === 'blue') {
     self.ship.setTint(0xf2fcff);
     self.turret.setTint(0xf2fcff);
   } else {
@@ -320,16 +401,11 @@ function addOtherPlayers(self, playerInfo) {
 }
 
 function update() {
-  if (this.ship) {
+  if (this.ship && (!this.gameover)) {
     self = this;
-    if (this.once){
+    if (this.once)
       this.HPtext.setVisible(true);
-      /*this.collisionLayers.forEach(function (entry) {
-        self.physics.add.collider(self.ship, entry);
-        self.physics.add.collider(self.turret, entry);
-      });*/
     this.once = false;
-    }
     this.HPtext.setText(this.HP);
     this.cameras.main.zoom = 0.65;
     this.cameras.main.startFollow(this.ship, true, 0.05, 0.05);
@@ -364,6 +440,10 @@ function update() {
     // Emite date despre miscarea jucatorului
     
     this.HPtext.setPosition(this.ship.x -20 , this.ship.y - 100);
+    /*if (this.gameOpponent){
+      self.enemyHPtext.setVisible(true);
+      self.enemyHPtext.setPosition(self.gameOpponent.scene.ship.x -20, self.gameOpponent.scene.ship.y - 100);
+    }/**/
     this.turret.x = this.ship.x;
     this.turret.y =this.ship.y;
     var x = this.ship.x;

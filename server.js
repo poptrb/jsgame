@@ -8,9 +8,11 @@ var usernames = {};
 var rq = require('./public/js/rooms')
 var queue = new rq();
 
+xcoords = [1740, 885, 677, 1553, 499];
+ycoords = [1495, 1693, 448, 967, 1171];
 var star = {
-  x: Math.floor(Math.random() * 700) + 50,
-  y: Math.floor(Math.random() * 500) + 50
+  x: xcoords[Math.floor(Math.random() * 4)],
+  y: ycoords[Math.floor(Math.random() * 4)]
 };
 
 var scores = {
@@ -39,8 +41,8 @@ io.sockets.on('connection', function (socket) {
     players[socket.id] = {
       rotation: 0,
       t: 0,
-      x: Math.floor(Math.random() * 700) + 50,
-      y: Math.floor(Math.random() * 500) + 50,
+      x: xcoords[Math.floor(Math.random() * 4)],
+      y: ycoords[Math.floor(Math.random() * 4)],
       playerId: socket.id,
       team: (Math.floor(Math.random() * 2) == 0) ? 'red' : 'blue',
       room: socket.roomchoice, //(Math.floor(Math.random() * 2) == 0) ? 'r1' : 'r2',

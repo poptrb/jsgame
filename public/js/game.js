@@ -1,8 +1,8 @@
 var config = {
   type: Phaser.WEBGL,
   parent: 'phaser-example',
-  width: 800,
-  height: 600,
+  width: 1200,
+  height: 800,
   physics:
   {
     default: 'arcade',
@@ -290,7 +290,7 @@ function create() {
     if (self.star) self.star.destroy();
     self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star').setScale(0.35, 0.35);
     self.physics.add.overlap(self.ship, self.star, function () {
-      this.socket.emit('starCollected');
+      //this.socket.emit('starCollected');
     }, null, self);
   });
 
@@ -322,10 +322,11 @@ function create() {
       // Coliziune cu celalalt jucator, unde se va emite un eveniment catre server
       // care semnifica ca celalalt jucator a fost lovit.
       // La impact se activeaza o explozie, iar glontul dispare.
+      console.log(this.ship.x, this.ship.y);
       this.physics.add.collider(this.otherPlayers, bullet, (bullet, otherPlayers)=>{
         if (bullet.active === true)//) && enemyHit.active === true)
         {
-          console.log("hit");
+          
           const explosionSprite = self.add
             .sprite(bullet.x, bullet.y, 'explosion')
             .setScale(1.5, 1.5)
@@ -459,15 +460,11 @@ function update() {
     
     this.HPtext.setPosition(this.ship.x -20 , this.ship.y - 100);
     this.userNameText.setPosition(this.ship.x -20 , this.ship.y - 130);
-    if (this.gameOpponent)
+    /*if (this.gameOpponent)
     {
-      self.enemyHPtext.setPosition(this.gameOpponent.x -20 , this.gameOpponent.y - 100);
-      self.opponentText.setPosition(this.gameOpponent.x -20 , this.gameOpponent.y - 130);
-    }
-    /*if (this.gameOpponent){
-      self.enemyHPtext.setVisible(true);
-      self.enemyHPtext.setPosition(self.gameOpponent.scene.ship.x -20, self.gameOpponent.scene.ship.y - 100);
-    }/**/
+      self.enemyHPtext.setPosition(self.gameOpponent.x -20 , self.gameOpponent.y - 100);
+      this.opponentText.setPosition(self.gameOpponent.x -20 , self.gameOpponent.y - 130);
+    }*/
     this.turret.x = this.ship.x;
     this.turret.y =this.ship.y;
     var x = this.ship.x;

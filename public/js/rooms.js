@@ -55,6 +55,7 @@ class roomQueue {
   }
 
   getrooms() {
+    console.log('Camere existente:');
     this.rooms.forEach((el) => {
       console.log(el.roomId,
         el.player1, el.player2);

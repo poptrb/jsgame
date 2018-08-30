@@ -8,7 +8,7 @@ var config = {
     default: 'arcade',
     arcade:
     {
-      debug: false,
+      debug: true,
       gravity: { y: 0 }
     }
   },
@@ -34,7 +34,7 @@ var game = new Phaser.Game(config);
 function preload() {
   this.load.image('ship', 'assets/tankbody.png');
   this.load.image('otherPlayer', 'assets/enemyBlack5.png');
-  this.load.image('star', 'assets/star_gold.png');
+  this.load.image('star', 'assets/medkit.png');
   //this.load.image('star', 'assets/bb.png');
   this.load.image('background', 'assets/bg2.jpg');
   this.load.image('reticle', 'assets/crosshair.png');
@@ -126,7 +126,7 @@ function create() {
     Object.keys(players).forEach(function (id) {
       if (players[id].playerId === self.socket.id && players[id].created === 0) {
         addPlayer(self, players[id]);
-        //console.log('M-am adaugat pe mine insumi', players[id].username);
+        self.username = players[id].username;
         self.collisionLayers.forEach(function (entry) {
           self.physics.add.collider(self.ship, entry);
           self.physics.add.collider(self.turret, entry);
@@ -134,6 +134,11 @@ function create() {
         self.player = players[id];
         self.room = room;
         console.log('You: ',self.player.playerId);
+        self.userNameText = self.add
+          .text(0, 0, self.username,{fontFamily:'Arial Black', fontSize: '32px', fill: '#c6dcff' })
+          .setVisible(false)
+          .setStroke('#878681', 10)
+          .setShadow(2, 2, "#878681", 2, false, true);
         if (self.otherPlayers.getChildren().length > 0) {
           self.gameOpponent = self.otherPlayers.getChildren()[0];
           console.log('The opponent: ', self.gameOpponent.playerId);
@@ -141,7 +146,6 @@ function create() {
 
       } else 
          if (room === players[id].room) {
-           console.log('equal');
         addOtherPlayers(self, players[id]);
       }
     });
@@ -154,12 +158,17 @@ function create() {
       addOtherPlayers(self, playerInfo);
       // Vrem id-ul oponentului doar din aceasta camera
       self.gameOpponent = self.otherPlayers.getChildren()[0];
-      console.log('You: ',self.player.playerId);
-      console.log('The opponent: ', self.gameOpponent.playerId);
+      self.opponentText = self.add
+          .text(0, 0, self.gameOpponent.username,{fontFamily:'Arial Black', fontSize: '32px', fill: '#c6dcff' })
+          .setVisible(false)
+          .setStroke('#878681', 10)
+          .setShadow(2, 2, "#878681", 2, false, true)
+      /*console.log('You: ',self.player.playerId);
+      console.log('The opponent: ', self.gameOpponent.playerId);*/
     }
   });
 
-  this.socket.on('disconnect', function (playerId) {
+  this.socket.on('disconnect', function (playerId, room) {
     self.otherPlayers.getChildren().forEach(function (otherPlayer) {
       if (playerId === otherPlayer.playerId) {
         otherPlayer.destroy();
@@ -169,10 +178,15 @@ function create() {
       if (playerId === otherTurret.playerId) {
         otherTurret.destroy();
       }
-    alert('Celalt jucator s-a deconectat.');
-    self.winner = self.socket.id;
-    self.socket.emit('gameover', self.room, self.winner);
-    self.scene.destroy();
+    //if (self.room === room){
+      //In cazul deconectarii unui oponent, cel ramas castiga automat.
+      //Camera trebuie sa se stearga si sa nu se mai alature aici nimeni
+      alert('Celalt jucator s-a deconectat.');
+      self.gameover = true;
+      self.winner = self.socket.id;
+      self.socket.emit('gameover', self.room, self.winner);
+      self.scene.destroy();
+    //}
     });
   });
 
@@ -201,14 +215,15 @@ function create() {
   this.cameras.main.setDeadzone(400, 200);
   this.cursors = this.input.keyboard.createCursorKeys();
 
+
   // Date despre hit-points ale tancurilor
   this.enemyHP = this.HP = 100;
   this.HPtext = this.add.text(0, 0, this.HP,
-   { fontSize: '26px', fill: '#0000FF' }).setVisible(false);
+   {fontFamily:'Arial Black', fontSize: '30px', fill: '#eadc6e' }).setVisible(false).setStroke('#878681', 10).setShadow(2, 2, "#878681", 2, false, true);
   this.enemyHPtext = this.add.text(0, 0, this.enemyHP,
-   { fontSize: '26px', fill: '#0000FF' }).setVisible(false);
+   {fontFamily:'Arial Black', fontSize: '30px', fill: '#f74052' }).setVisible(false).setStroke('#878681', 10).setShadow(2, 2, "#878681", 2, false, true);
 
-
+  
   this.blueScoreText = this.add.text(0, 0, '',
     { fontSize: '32px', fill: '#0000FF' });
   this.redScoreText = this.add.text(584, 16, '',
@@ -238,12 +253,12 @@ function create() {
     if (self.HP < 0 && !(self.gameover)){
       self.socket.emit('destroyed', self.socket.id);
       self.gameover = true;
-      self.winner = self.socket.id;
+      self.winner = self.gameOpponent.playerId;
     }
     else if ((self.enemyHP < 0) &&  !(self.gameover)){
       self.socket.emit('destroyed', self.gameOpponent.playerId); 
       self.gameover = true;
-      self.winner = self.gameOpponent.playerId;
+      self.winner = self.socket.id;
       self.add.image(self.gameOpponent.x, self.gameOpponent.y, 'crater');
       const explosionSprite = self.add.
         sprite(self.gameOpponent.x  , self.gameOpponent.y - 60, 'explosionDestroy').
@@ -253,7 +268,8 @@ function create() {
       removeExplosion(explosionSprite, 750);
     }
     if (self.gameover)
-      self.socket.emit('gameover', self.room, self.winner)
+      self.socket.emit('gameover', self.room, self.winner);
+      
   });
 
   this.socket.on('destroySelf', function (id) {
@@ -272,7 +288,7 @@ function create() {
   
   this.socket.on('starLocation', function (starLocation) {
     if (self.star) self.star.destroy();
-    self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
+    self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star').setScale(0.35, 0.35);
     self.physics.add.overlap(self.ship, self.star, function () {
       this.socket.emit('starCollected');
     }, null, self);
@@ -301,7 +317,7 @@ function create() {
 
   this.input.on('pointerdown', function (pointer, time) {
     var bullet = playerBullets.get().setActive(true).setVisible(true);
-    if (bullet) {
+    if (bullet && !this.gameover) {
       bullet.fire(this.ship, reticle);
       // Coliziune cu celalalt jucator, unde se va emite un eveniment catre server
       // care semnifica ca celalalt jucator a fost lovit.
@@ -316,7 +332,7 @@ function create() {
             .play('exp');
           this.socket.emit('HPUpdate',
           {
-            ehp:this.enemyHP - 25,
+            ehp:this.enemyHP - 10,
             php:this.HP,
             player: self.socket.id,
             enemy: self.gameOpponent.playerId
@@ -405,6 +421,8 @@ function update() {
     self = this;
     if (this.once)
       this.HPtext.setVisible(true);
+      this.userNameText.setVisible(true);
+      
     this.once = false;
     this.HPtext.setText(this.HP);
     this.cameras.main.zoom = 0.65;
@@ -440,6 +458,12 @@ function update() {
     // Emite date despre miscarea jucatorului
     
     this.HPtext.setPosition(this.ship.x -20 , this.ship.y - 100);
+    this.userNameText.setPosition(this.ship.x -20 , this.ship.y - 130);
+    if (this.gameOpponent)
+    {
+      self.enemyHPtext.setPosition(this.gameOpponent.x -20 , this.gameOpponent.y - 100);
+      self.opponentText.setPosition(this.gameOpponent.x -20 , this.gameOpponent.y - 130);
+    }
     /*if (this.gameOpponent){
       self.enemyHPtext.setVisible(true);
       self.enemyHPtext.setPosition(self.gameOpponent.scene.ship.x -20, self.gameOpponent.scene.ship.y - 100);
@@ -458,7 +482,8 @@ function update() {
     //Daca pozitia jucatorului sau a turelei acesuita s-a schimbat => emite catre server noua pozitie
     if (this.ship.oldPosition && (x !== this.ship.oldPosition.x || y !== this.ship.oldPosition.y
       || r !== this.ship.oldPosition.rotation || rt != this.ship.oldPosition.tur_rotation)) {
-      this.socket.emit('playerMovement',
+        if (!this.gameover)
+        this.socket.emit('playerMovement',
         {
           x: this.ship.x,
           y: this.ship.y,

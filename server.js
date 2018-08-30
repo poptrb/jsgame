@@ -77,9 +77,11 @@ io.sockets.on('connection', function (socket) {
     socket.leave(socket.roomchoice);
     delete players[socket.id];
     // Emite un mesaj catre toti jucatorii sa elimine acest jucator din meciul lor
-    io.emit('disconnect', socket.id);
+    //io.emit('disconnect', socket.id, socket.room);
+    io.sockets.in(socket.roomchoice).emit('disconnect', socket.id, socket.room);
     //queue.removePlayer(socket.roomchoice, socket.id);
-
+    queue.removeRoom(socket.roomchoice);
+    queue.getrooms();
   });
 
   // Cand un jucator se misca, updateaza datele acestuia pe server
@@ -108,7 +110,8 @@ io.sockets.on('connection', function (socket) {
   });
 
   socket.on('destroyed', function (id) {
-    console.log(players[id].username, 'a fost distrus de o bomba!!');
+    if (players[id])
+      console.log(players[id].username, 'a fost distrus de o bomba!!');
     io.sockets.in(socket.roomchoice).emit('destroySelf', id);
   });
   
@@ -116,7 +119,9 @@ io.sockets.on('connection', function (socket) {
     //Meciul trebuie distrus o data cu castigul acestuia de catre unul din jucator
     //Socketurile trebuie sa paraseasca meciul. 
     //TODO: Camera din queue distrusa.
+    if (players[winner])
     console.log(players[winner].username, 'a castigat in meciul' , room);
+    
     socket.leave(socket.roomchoice);
     delete players[socket.id];
     queue.removeRoom(room);
@@ -124,19 +129,21 @@ io.sockets.on('connection', function (socket) {
   });
 
   socket.on('starCollected', function () {
-    if (players[socket.id].team === 'red') 
+    /*if (players[socket.id].team === 'red') 
     {
-      scores.red -= 10;
+      //scores.red -= 10;
       
     }
     else 
     {
-      scores.blue += 10;
-    }
-    star.x = Math.floor(Math.random() * 700) + 50;
-    star.y = Math.floor(Math.random() * 500) + 50;
+      //scores.blue += 10;
+    }*/
+    star.x = Math.floor(Math.random() * 900 * 2) + 30;
+    star.y = Math.floor(Math.random() * 900 * 2) + 30;
     io.sockets.in(socket.roomchoice).emit('starLocation', star);
-    io.sockets.in(socket.roomchoice).emit('scoreUpdate', scores);
+    scores.hp_1st = 100;
+    io.sockets.in(socket.roomchoice).emit('newHP', scores, socket.id);
+    //io.sockets.in(socket.roomchoice).emit('scoreUpdate', scores);
   });
 
   

@@ -12,8 +12,12 @@ Am pornit la drum cu ideea de a crea un joc care poate fi jucat in orice browser
  - [Express](https://expressjs.com/), care este la randul sau un framework peste NodeJS. Acesta este un framework minimal pentru creearea de aplicatii web folosit pentru servirea de continut static clientului si conectarea endpointurilor (URI-urilor) aplicatiei la cererile clientului (cererile HTTP de tipul GET/POST sunt tratate mult mai usor si rapid cu acesta).
  - [Phaser 3](https://phaser.io/phaser3) este o biblioteca pentru grafica si simularea fizica (coliziuni, particule, viteza, acceleratie a corpurilor) a elementelor de joc. Am ales sa folosesc aceasta biblioteca datorita caracterului modular care permite definirea de noi clase si extinderea celor existente in biblioteca foarte usor. Obiectele nou create sunt usor de manipulat avand o multitudine de metode utile, facandu-le astfel usor de separat pentru integrarea fiecareia in lumea jocului. Acest framework are in spate un renderer de WebGL, destinat special jocurilor 2D in browser.
 - [Tiled](https://www.mapeditor.org/) este un editor de harti 2D ce faciliteaza creearea lumii de joc din seturi speciale de imagini numite [tilesets](https://www.mapeditor.org/img/screenshot-terrain.png) (seturi de dale individuale din care se construieste un nivel pentru joc).
-- Un sistem de baze de date, posibil MySQLLite sau MongoDB pentru integrarea unor functii de autentificare a utilizatorilor.
-- HTML si CSS pentru aspectul paginilor web statice.
+- [MongoDB](https://www.mongodb.com/) pentru pastrarea datelor de autentificare ale utilizatorilor. Este un SGBD noSQL care mentine datele intr-un format flexibil JSON, iar modelul documentului se muleaza pe obiectele din codul aplicatiei, facand lucrurl cu aceasta foarte facil.
+- HTML/CSS pentru aspectul paginilor web statice. Am folosit bootstrap care este o bibilioteca puternic bazata pe jQuery pentru a face un site web responsiv 
+si cu un design simplu si placut.
+- [PUG/Jade](https://pugjs.org/api/getting-started.html) care este un motor de templating pentru HTML, care in frameworkul Express este convertit automat si afisat ca HTML clasic. Folosing acest motor de templating se reduce codul rescris, iar lungimea acestuia este cu mult mai mica fata de HTML clasic deoarece elementele se declara doar o data si imbricarea acestora se face pe baza indentarii (asemanator de exemplu cu Python).
+- [Passport.js](http://www.passportjs.org/) este un middleware pentru autentificare in Node si Express, alaturi de bcrypt, o bibilioteca pentru Node care face usoara criptarea parolelor.
+
 ## Imagini 
 Prima imagine ofera o viziune de ansamblu asupra jocului. Se poate vedea un tanc, cu turela acestuia, nivelul in care sunt cateva casute si drumuri si tinta care semnifica in ce directie va trage turela.
 ![Un tanc pe campul de lupta](screens/Selection_003.png)

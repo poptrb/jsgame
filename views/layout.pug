@@ -1,0 +1,46 @@
+doctype html
+html
+  head
+    title Tanks of FMI
+    link(rel='stylesheet' href='/bower_components/bootstrap/dist/css/bootstrap.css')
+    link(rel='stylesheet' href='/css/style.css')
+  body
+    nav.navbar.navbar-inverse
+      .container
+        .navbar-header
+          button.navbar-toggle.collapsed(type='button', data-toggle='collapse', data-target='#navbar', aria-expanded='false', aria-controls='navbar')
+            span.sr-only Toggle navigation
+            span.icon-bar
+            span.icon-bar
+            span.icon-bar
+          a.navbar-brand(href='/') Tanks of FMI
+        #navbar.collapse.navbar-collapse
+          ul.nav.navbar-nav
+            li
+              a(href='/') Acasă
+            if user
+              li
+                a(href='/game') Joacă
+                //a(href='/articles/add') Add Article
+          ul.nav.navbar-nav.navbar-right
+            if user
+              li 
+                a(href='/users/logout') Ieşi din cont
+            else
+              li
+                a(href='/users/register') Crează cont
+              li
+                a(href='/users/login') Autentificare
+    .container
+      != messages('message', locals)
+      if errors
+        each error, i in errors
+          div(class="alert alert-danger") #{error.msg}
+      block content
+      br
+      hr
+      footer
+        p   Iulian Popescu - Facultatea de Matematică şi Informatică, Universitatea din Bucureşti
+    script(src='/bower_components/jquery/dist/jquery.js')  
+    script(src='/bower_components/bootstrap/dist/js/bootstrap.js')
+    //script(src='/js/main.js')  

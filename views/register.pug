@@ -1,0 +1,22 @@
+extends layout
+
+block content
+  h1 Creeare cont
+  form(method='POST', action='/users/register')
+    #form-group
+      label Nume:
+      input.form-control(name='name', type='text')
+    #form-group
+      label E-mail:
+      input.form-control(name='email', type='text')
+    #form-group
+      label Nume de utilizator:
+      input.form-control(name='username',type='text')
+    #form-group
+      label Parolă:
+      input.form-control(name='password',type='password')
+    #form-group
+      label Confirmă parola:
+      input.form-control(name='password2',type='password')
+    br
+    input.btn.btn-primary(type='submit',value='Submit')

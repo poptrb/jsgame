@@ -64,6 +64,7 @@ function preload() {
   ]);
 }
 
+
 function create() {
 
   var self = this;
@@ -130,7 +131,10 @@ function create() {
     // Apeleaza functia din server 'addUser' si trimite un parametru
     // Camera nu e ok sa se stabileasca aici. Trebuie trimisa de la server.
     //var room =  (Math.floor(Math.random() * 2) == 0) ? 'r1' : 'r2'
-    self.socket.emit('adduser', prompt("Cum te cheama?"));
+    $(document).ready(function(){
+      self.username = $("userr").text();});
+    console.log('din joc:', $("userr").text());
+    self.socket.emit('adduser', prompt());
 
   });
   //  Rezolvare potentiala bug 
@@ -313,8 +317,18 @@ function create() {
     if (self.star) self.star.destroy();
     self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star').setScale(0.35, 0.35);
     self.physics.add.overlap(self.ship, self.star, function () {
-      //this.socket.emit('starCollected');
+      if (this.gameOpponent){
+      this.socket.emit('starCollected');
+      this.socket.emit('HPUpdate',
+            {
+              ehp: this.enemyHP,
+              php: Math.min(this.HP + 20, 100),
+              player: self.socket.id,
+              enemy: self.gameOpponent.playerId
+            });
+          }
     }, null, self);
+  
   });
 
   reticle = this.physics.add.sprite(1024, 1024, 'reticle');
@@ -344,6 +358,8 @@ function create() {
         reticle.y += pointer.movementY;
     };
   }, this);
+
+  this.centru = this.physics.add.image(1024, 1024, 'star').setVisible(false);
 
   this.input.on('pointerdown', function (pointer, time) {
     var bullet = playerBullets.get().setActive(true).setVisible(true);
@@ -450,15 +466,17 @@ function addOtherPlayers(self, playerInfo) {
 }
 
 function update() {
+  if (this.gameover)
+      this.cameras.main.startFollow(this.centru, true, 0.05, 0.05);
   if (this.ship && (!this.gameover)) {
     self = this;
     if (this.once){
       this.HPtext.setVisible(true);
       this.userNameText.setVisible(true);
-    this.tinta.setPosition(this.ship.x , this.ship.y + 100 );
+      this.tinta.setPosition(this.ship.x , this.ship.y + 100 );
+    }
     this.cameras.main.startFollow(this.tinta, true, 0.05, 0.05);
     
-    }
     this.once = false;
     this.HPtext.setText(this.HP);
     this.cameras.main.zoom = 0.65;

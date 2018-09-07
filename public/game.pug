@@ -30,17 +30,18 @@ html
                 a(href='/users/login') Autentificare
     .container
       #game(style='margin:0 auto;')
-        script(type='text/javascript').
-        script(src='/socket.io/socket.io.js')
-        script(src='//cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.min.js')
-        script(src='js/bullet.js')
-        script(src='js/explosion.js')
-        script(src='js/require.js')
-        script(src='js/rooms.js')
-        script(src='js/game.js')
-        script(src='https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js')
-        script(src='/bower_components/jquery/dist/jquery.js')  
-        script(src='/bower_components/bootstrap/dist/js/bootstrap.js')
+      h1#userr #{user.username}.
+      script(type='text/javascript').
+      script(src='/socket.io/socket.io.js')
+      script(src='//cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.min.js')
+      script(src='js/bullet.js')
+      script(src='js/explosion.js')
+      script(src='js/require.js')
+      script(src='js/rooms.js')
+      script(src='js/game.js')
+      script(src='https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js')
+      script(src='/bower_components/jquery/dist/jquery.js')  
+      script(src='/bower_components/bootstrap/dist/js/bootstrap.js')
       br
       hr
       footer

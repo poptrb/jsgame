@@ -44,6 +44,7 @@ class roomQueue {
         if (el.roomId === roomId)
           index = this.rooms.indexOf(el);
       });
+      if (index !=0)
       this.rooms.splice(index,1);
     }
   }
@@ -64,10 +65,9 @@ class roomQueue {
 }
 
 module.exports = roomQueue;
-/*
 var rq = new roomQueue;
 console.log([true, false].reduce((a, b) => a && b));
-/*rq.addPlayer('ti');
+rq.addPlayer('ti');
 //rq.getrooms();
 rq.addPlayer('a');
 //rq.getrooms();
@@ -76,6 +76,7 @@ rq.addPlayer('b');
 rq.addPlayer('c');
 rq.addPlayer('t');
 rq.addPlayer('m');
-rq.removeRoom(5);
+//rq.removeRoom(rq.rooms[1].roomId);
+rq.removeRoom(4);
 //rq.removePlayer(rq.rooms[0].roomId, 'a');
-rq.getrooms();*/
+rq.getrooms();

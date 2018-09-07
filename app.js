@@ -84,14 +84,23 @@ require('./config/passport')(passport);
 app.use(passport.initialize());
 app.use(passport.session());
 
-var usr = ''; 
+var user = ''; 
 app.get('*', function(req, res, next){
   res.locals.user = req.user || null;
-  usr=res.locals.user;
+  user=res.locals.user;
   next();
 });
-var serverRoute = require('./server.js')(express, app, io, usr);
 
+app.get('/game', function (req, res) {
+  //res.sendFile(__dirname + '/public/indexba.html');
+  if (user)
+    console.log(user.username);
+  res.render(__dirname + '/public/game', {
+    user : res.locals.user
+  });
+  
+});
+var serverRoute = require('./server.js')(express, app, io, user);
 // Home Route
 app.get('/', function(req, res){
       res.render('index2', {

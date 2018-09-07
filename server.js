@@ -4,13 +4,14 @@ const router = express.Router();
 var server = require('http').Server(app);
 var io = require('socket.io').listen(server);*/
 
-module.exports = function (express, app, io, user){
+module.exports = function (express, app, io){
+  
   var players = {};
   var usernames = {};
   var rq = require('./public/js/rooms')
   var queue = new rq();
 
-  xcoords = [1740, 885, 677, 1553, 499];
+  xcoords = [1500, 885, 677, 1553, 499];
   ycoords = [1495, 1693, 448, 967, 1171];
   var star = {
     x: xcoords[Math.floor(Math.random() * 4)],
@@ -26,21 +27,13 @@ module.exports = function (express, app, io, user){
 
   app.use(express.static(__dirname + '/public'));
 
-  app.get('/game', function (req, res) {
-    //res.sendFile(__dirname + '/public/indexba.html');
-    if (req.user)
-      console.log(req.locals);
-    res.render(__dirname + '/public/game');
-    
-  });
-
-
   io.sockets.on('connection', function (socket) {
+    
     socket.on('adduser', function (username) {
       socket.roomchoice = queue.addPlayer(socket.id);
       console.log(socket.roomchoice);
       socket.join(socket.roomchoice);
-      socket.username = user;
+      socket.username = username;
       console.log(socket.username);
       // Creeaza un nou jucator si il adauga la obiectul Players
       players[socket.id] = {
@@ -90,6 +83,7 @@ module.exports = function (express, app, io, user){
       //queue.removePlayer(socket.roomchoice, socket.id);
       queue.removeRoom(socket.roomchoice);
       queue.getrooms();
+      //io.sockets.get('/');
     });
 
     // Cand un jucator se misca, updateaza datele acestuia pe server
@@ -140,11 +134,10 @@ module.exports = function (express, app, io, user){
     });
 
     socket.on('starCollected', function () {
-      star.x = Math.floor(Math.random() * 900 * 2) + 30;
-      star.y = Math.floor(Math.random() * 900 * 2) + 30;
+      star.x = xcoords[Math.floor(Math.random() * 4)];
+      star.y = ycoords[Math.floor(Math.random() * 4)];
       io.sockets.in(socket.roomchoice).emit('starLocation', star);
-      scores.hp_1st = 100;
-      io.sockets.in(socket.roomchoice).emit('newHP', scores, socket.id);
+      
       //io.sockets.in(socket.roomchoice).emit('scoreUpdate', scores);
     });
 

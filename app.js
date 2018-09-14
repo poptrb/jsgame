@@ -116,9 +116,16 @@ app.get('/', function(req, res){
       res.render('index2', {
         title:'Acasă',
         user : user
-      });
+      });      
 });
 
+/*var people = {};
+app.get('/', function(req, res){
+  console.log(u.find({},{},function(e,docs){
+    people = res.json(docs);}
+  )); 
+  console.log(people);
+});*/
 // Route Files
 //let articles = require('./routes/articles');
 

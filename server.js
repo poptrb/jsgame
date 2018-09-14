@@ -132,13 +132,11 @@ exports.serv = function (express, app, io){
   
       if (socket.id === winner){
         console.log(players[winner].username, 'a castigat in meciul', room);
-        usermodel.findOneAndUpdate({name : socket.username}, 
-                            {$inc: {wins: 1}},
-                            { new: true });
+        usermodel.updateOne({name : socket.username}, 
+                            {$inc: {wins: 1}}).exec();
       }
-        usermodel.findOneAndUpdate({username : socket.username}, 
-                          {$inc: {losses: 1}},
-                          { new: true });
+        usermodel.updateOne({name : socket.username}, 
+                          {$inc: {losses: 1}}).exec();
       socket.leave(socket.roomchoice);
       delete players[socket.id];
       queue.removeRoom(socket.roomchoice);

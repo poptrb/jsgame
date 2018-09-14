@@ -8,7 +8,8 @@ const session = require('express-session');
 const passport = require('passport');
 const config = require('./config/database');
 const app = express();
-
+const roomInfo = require('./server.js').room;
+r = roomInfo.rooms;
 app.use(express.static(path.join(__dirname, 'public')));
 var server = require('http').Server(app);
 var io = require('socket.io').listen(server);
@@ -20,6 +21,7 @@ let db = mongoose.connection;
 // Check connection
 db.once('open', function(){
   console.log('Connected to MongoDB');
+  db.Users
 });
 
 // Check for DB errors
@@ -85,11 +87,15 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 var user = ''; 
+var loggedin = false;
 app.get('*', function(req, res, next){
   res.locals.user = req.user || null;
   user=res.locals.user;
+  module.exports = user;
+  loggedin = true;
   next();
 });
+
 
 app.get('/game', function (req, res) {
   //res.sendFile(__dirname + '/public/indexba.html');
@@ -97,21 +103,25 @@ app.get('/game', function (req, res) {
     console.log(user.username);
   res.render(__dirname + '/public/game', {
     user : res.locals.user
-  });
   
+  });
 });
-var serverRoute = require('./server.js')(express, app, io, user);
+
+var serverRoute = require('./server.js').serv(express, app, io, user);
+let users = require('./routes/users');
+let u = require('./models/user');
+app.use('/users', users);
 // Home Route
 app.get('/', function(req, res){
       res.render('index2', {
-        title:'Login'
+        title:'Acasă',
+        user : user
       });
 });
 
 // Route Files
 //let articles = require('./routes/articles');
-let users = require('./routes/users');
-app.use('/users', users);
+
 
 
 server.listen(process.env.PORT || 8081, function () {
@@ -121,3 +131,4 @@ server.listen(process.env.PORT || 8081, function () {
 /*app.listen(3000, function(){
   console.log('Server started on port 3000...');
 });*/
+

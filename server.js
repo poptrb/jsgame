@@ -3,14 +3,16 @@ var app = express();
 const router = express.Router();
 var server = require('http').Server(app);
 var io = require('socket.io').listen(server);*/
-
-module.exports = function (express, app, io){
+var usermodel = require('./models/user');
+var rq = require('./public/js/rooms');
+var exports = module.exports = {};
+var queue = new rq();
+exports.room = queue;
+exports.serv = function (express, app, io){
   
   var players = {};
   var usernames = {};
-  var rq = require('./public/js/rooms')
-  var queue = new rq();
-
+  
   xcoords = [1500, 885, 677, 1553, 499];
   ycoords = [1495, 1693, 448, 967, 1171];
   var star = {
@@ -29,12 +31,15 @@ module.exports = function (express, app, io){
 
   io.sockets.on('connection', function (socket) {
     
-    socket.on('adduser', function (username) {
-      socket.roomchoice = queue.addPlayer(socket.id);
-      console.log(socket.roomchoice);
+    socket.on('adduser', function () {
+      var user = require("./app");
+      socket.username = user.name;
+      socket.roomchoice = queue.addPlayer(socket.username);
+      //console.log(socket.roomchoice);
       socket.join(socket.roomchoice);
-      socket.username = username;
-      console.log(socket.username);
+      
+      
+      //console.log(socket.username);
       // Creeaza un nou jucator si il adauga la obiectul Players
       players[socket.id] = {
         rotation: 0,
@@ -49,8 +54,11 @@ module.exports = function (express, app, io){
         created: 0,
         username: socket.username
       };
-      console.log('a user connected: ', username, ' ', socket.id, 'in room', socket.roomchoice);
-      usernames[username] = username;
+      console.log('a user connected: ', 
+        socket.username, ' ', 
+        socket.id, 'in room',
+        socket.roomchoice);
+      usernames[socket.username] = socket.username;
 
 
       //socket.to(socket.room).emit('currentPlayers', players, socket.room);
@@ -82,7 +90,7 @@ module.exports = function (express, app, io){
       io.sockets.in(socket.roomchoice).emit('disconnect', socket.id, socket.room);
       //queue.removePlayer(socket.roomchoice, socket.id);
       queue.removeRoom(socket.roomchoice);
-      queue.getrooms();
+      //queue.getrooms();
       //io.sockets.get('/');
     });
 
@@ -120,13 +128,21 @@ module.exports = function (express, app, io){
     socket.on('gameover', function (room, winner) {
       //Meciul trebuie distrus o data cu castigul acestuia de catre unul din jucator
       //Socketurile trebuie sa paraseasca meciul. 
-      if (players[winner])
+      //Winnerul se stabilste dupa id
+  
+      if (socket.id === winner){
         console.log(players[winner].username, 'a castigat in meciul', room);
-
+        usermodel.findOneAndUpdate({name : socket.username}, 
+                            {$inc: {wins: 1}},
+                            { new: true });
+      }
+        usermodel.findOneAndUpdate({username : socket.username}, 
+                          {$inc: {losses: 1}},
+                          { new: true });
       socket.leave(socket.roomchoice);
       delete players[socket.id];
-      queue.removeRoom(room);
-      queue.getrooms();
+      queue.removeRoom(socket.roomchoice);
+      //queue.getrooms();
       app.get('/', function (req, res) {
         res.redirect('/');        
         

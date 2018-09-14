@@ -62,6 +62,10 @@ class roomQueue {
         el.player1, el.player2);
     });
   }
+
+  getrooms2() {
+    return this.rooms;
+  }
 }
 
 module.exports = roomQueue;

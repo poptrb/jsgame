@@ -3,14 +3,46 @@ extends layout
 block content
   h1 #{title}
   #container.col
-    p Bine ai venit!
-    p
-      | Pentru a putea juca acest joc trebuie mai întâi să îţi creezi un cont, apoi sa te loghezi cu datele tale.
-      | Jocul constă într-o luptă 1 versus 1 cu un alt jucător. 
-      br 
-      |Scopul tău este să distrugi tancul oponentului.
-      br
-      | Pentru a controla tancul foloseşte tastele direcţionale iar pentru a trage foloseşte mouse-ul.
-      br
-      | Succes şi distracţie placută!
+    if user
+     p Bine ai venit, #{user.name}!
+    else
+     p Bine ai venit.
+    | Pentru a putea juca acest joc trebuie mai întâi să îţi creezi un cont, apoi sa te loghezi cu datele tale.
+    | Jocul constă într-o luptă 1 versus 1 cu un alt jucător. 
+    br 
+    |Scopul tău este să distrugi tancul oponentului.
+    br
+    | Pentru a controla tancul foloseşte tastele direcţionale iar pentru a trage foloseşte mouse-ul.
+    br
+    | Succes şi distracţie placută!
+  if r
+   h2 Meciuri în desfășurare
+   each room, i in r
+    bold ID meci: #{room.roomId} 
+    br 
+    |Jucători: #{room.player1} vs. #{room.player2} 
+    br
+   //table.table.table-dark
+    thead
+      tr
+        th(scope='col') #
+        th(scope='col') First
+        th(scope='col') Last
+        th(scope='col') Handle
+    tbody
+      tr
+        th(scope='row') 1
+        td Mark
+        td Otto
+        td @mdo
+      tr
+        th(scope='row') 2
+        td Jacob
+        td Thornton
+        td @fat
+      tr
+        th(scope='row') 3
+        td Larry
+        td the Bird
+        td @twitter
   ul.list-group

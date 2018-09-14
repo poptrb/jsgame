@@ -71,7 +71,7 @@ function create() {
   this.socket = io();
 
   //Date despre incarcarea hartii 
-
+  console.log(window.localStorage.getItem('theuser'));
   const map = this.make.tilemap({ key: "map" });
 
   //Fiecare layer separat din harta trebuie incarcat intr-o variabila pentru afisare de catre Phaser
@@ -134,7 +134,7 @@ function create() {
     $(document).ready(function(){
       self.username = $("userr").text();});
     console.log('din joc:', $("userr").text());
-    self.socket.emit('adduser', prompt());
+    self.socket.emit('adduser');
 
   });
   //  Rezolvare potentiala bug 
@@ -215,6 +215,7 @@ function create() {
       self.winner = self.socket.id;
       self.socket.emit('gameover', self.room, self.winner);
       self.scene.destroy();
+      
       //}
     });
   });
@@ -243,6 +244,18 @@ function create() {
   });
 
   this.cameras.main.setDeadzone(400, 200);
+  this.cameras.main.zoom = 0.65;
+  var controlConfig = {
+    camera: this.cameras.main,
+    zoomIn: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q),
+    zoomOut: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E),
+    acceleration: 0.06,
+    drag: 0.0005,
+    maxSpeed: 1.0
+};
+
+controls = new Phaser.Cameras.Controls.SmoothedKeyControl(controlConfig);
+
   this.cursors = this.input.keyboard.createCursorKeys();
 
 
@@ -279,6 +292,7 @@ function create() {
       self.socket.emit('destroyed', self.socket.id);
       self.gameover = true;
       self.winner = self.gameOpponent.playerId;
+      alert('Ai pierdut. Click în ferastra de joc pentru a reveni la meniul principal.')
     }
     else if ((self.enemyHP === 0) && !(self.gameover)) {
       self.socket.emit('destroyed', self.gameOpponent.playerId);
@@ -292,6 +306,7 @@ function create() {
       self.gameOpponent.destroy();
       self.otherTurrets.getChildren()[0].destroy();
       removeExplosion(explosionSprite, 750);
+      alert('Ai câștigat! Click în ferastra de joc pentru a reveni la meniul principal.')
     }
     if (self.gameover)
       self.socket.emit('gameover', self.room, self.winner);
@@ -371,7 +386,7 @@ function create() {
       // La impact se activeaza o explozie, iar glontul dispare.
       console.log(this.ship.x, this.ship.y);
       this.physics.add.collider(this.otherPlayers, bullet, (bullet, otherPlayers) => {
-        if (bullet.active === true)//) && enemyHit.active === true)
+        if (bullet.active === true)
         {
           
           const explosionSprite = self.add
@@ -416,6 +431,9 @@ async function removeExplosion(explosion, t) {
   await destroyBomb(explosion, t);
 }
 
+function tranzcamera(self){
+
+}
 function addPlayer(self, playerInfo) {
 
   self.ship = self.physics.add
@@ -465,9 +483,17 @@ function addOtherPlayers(self, playerInfo) {
   self.otherTurrets.add(otherTurret);
 }
 
-function update() {
-  if (this.gameover)
-      this.cameras.main.startFollow(this.centru, true, 0.05, 0.05);
+function update(delta) {
+  controls.update(delta);
+  if (this.cameras.main.zoom < 0.5){
+    this.cameras.main.zoom = 0.5;
+  }
+  if (this.gameover){
+      this.cameras.main.startFollow(this.centru, false, 0.05, 0.05);
+      document.getElementById("game").addEventListener("click", function() {
+        window.location.href = '/';
+      });
+    }
   if (this.ship && (!this.gameover)) {
     self = this;
     if (this.once){
@@ -475,11 +501,11 @@ function update() {
       this.userNameText.setVisible(true);
       this.tinta.setPosition(this.ship.x , this.ship.y + 100 );
     }
-    this.cameras.main.startFollow(this.tinta, true, 0.05, 0.05);
+    this.cameras.main.startFollow(this.ship, true, 0.05, 0.05);
     
     this.once = false;
     this.HPtext.setText(this.HP);
-    this.cameras.main.zoom = 0.65;
+    
     
     if (this.gameOpponent){
       this.enemyHPtext.setText(this.enemyHP);

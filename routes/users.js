@@ -63,6 +63,7 @@ router.post('/register', function(req, res){
 // Formularul de autentificare
 router.get('/login', function(req, res){
   res.render('login');
+  User.find({});
 });
 
 // Autentificare

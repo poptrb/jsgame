@@ -17,6 +17,14 @@ const UserSchema = mongoose.Schema({
   password:{
     type: String,
     required: true
+  },
+  wins:{
+    type: Number,
+    default: 0
+  },
+  losses:{
+    type: Number,
+    default: 0
   }
 });
 
